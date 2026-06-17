@@ -343,7 +343,4 @@ pnpm build
 
 ## 跨链操作视频
 
-<video width="100%" controls>
-  <source src="assets/caozuo.mp4" type="video/mp4">
-  您的浏览器不支持 video 标签。
-</video>
+[🎥 点击观看演示操作视频](https://www.bilibili.com/video/BV1zhLX6dEkR/?vd_source=8c15b319910e79d935561c73f7f186cb)
