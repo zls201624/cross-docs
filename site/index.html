@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="None">
+        
+        
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>My Docs</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <link href="css/extra.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body class="homepage">
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href=".">My Docs</a>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#repchainrelayhub" class="nav-link">RepChain跨链平台relayHub部署与用户手册</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#1" class="nav-link">1. 系统部署指南</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#2" class="nav-link">2. 跨链管理平台操作手册</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#_1" class="nav-link">跨链操作视频</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="repchainrelayhub">RepChain跨链平台relayHub部署与用户手册</h1>
+<h2 id="1">1. 系统部署指南</h2>
+<p>本章节介绍系统各组件的网络拓扑配置、敏感信息注入及标准化启动流程。</p>
+<h3 id="11">1.1 前置运行环境</h3>
+<h4 id="111">1.1.1 基础环境与存储</h4>
+<ul>
+<li><strong>基础环境</strong>：JDK 11 或更高版本。</li>
+<li><strong>架构约束</strong>：中继跨链架构中，<strong>目前中继链仅支持部署在 RepChain 上</strong>，以太坊等公链/其他联盟链仅可作为业务链接入。</li>
+<li><strong>存储与权限</strong>：程序启动用户的执行目录必须具备读写权限。系统会在运行时自动生成以下 LevelDB 持久化目录，<strong>目录删除以后将失去网关数据</strong>：</li>
+<li><code>./data/db</code> （中继网关状态数据）</li>
+<li><code>./data/gateway_db</code> （RepChain 网关状态数据）</li>
+<li><code>./data/eth-gateway-db</code> （以太坊网关状态数据）</li>
+</ul>
+<h4 id="112">1.1.2 网络与端口连通性总表</h4>
+<blockquote>
+<p><strong>配置指引</strong>：以下清单基于系统标准的本地集群示例。实际部署时，请<strong>务必以各组件 <code>config/application.yml</code> 中的配置为准</strong>，并确保防火墙策略放行了相应的端口。</p>
+</blockquote>
+<p><strong>网络拓扑与端口映射表</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>组件名称</strong></th>
+<th>**对外暴露端口 **</th>
+<th><strong>需要访问的目标</strong></th>
+<th><strong>连通性说明</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>中继网关</strong> <code>tcip-rep-relayer</code></td>
+<td><strong><code>8000</code></strong> (REST) <strong><code>9090</code></strong> (gRPC 枢纽)</td>
+<td><strong><code>127.0.0.1:19081</code></strong> (中继链底层节点)</td>
+<td><strong>核心节点</strong>：必须放行 <code>9090</code> 端口，以便所有的业务网关都能连入。同时它自身必须能访问 <code>19081</code> 节点来同步中继链区块。</td>
+</tr>
+<tr>
+<td><strong>业务网关 A/B</strong> <em>(RepChain)</em></td>
+<td><strong><code>8001 / 8002</code></strong> (REST) <strong><code>9091 / 9092</code></strong> (gRPC)</td>
+<td><strong><code>20081 / 21081</code></strong> (对应底链节点) <strong><code>9090</code></strong> (中继网关)</td>
+<td><strong>联盟链节点</strong>：监听 <code>909x</code> 是为了接收中继网关下发的 Confirm/Cancel 回调指令；同时它必须能连通自己的底链节点和中继网关。</td>
+</tr>
+<tr>
+<td><strong>业务网关 C</strong> <em>(以太坊)</em></td>
+<td><strong><code>8003</code></strong> (REST) <strong><code>9093</code></strong> (gRPC)</td>
+<td><strong><code>Alchemy/Infura 公网节点</code></strong> (HTTPS 与 WSS) <strong><code>9090</code></strong> (中继网关)</td>
+<td><strong>公链节点</strong>：监听 <code>9093</code> 供中继回调。由于对接的是公网测试网，服务器必须具备访问外网的能力，且必须同时支持 HTTP 与 WebSocket 通道。</td>
+</tr>
+<tr>
+<td><strong>管理平台</strong> <code>Portal-BFF</code></td>
+<td><strong><code>9000</code></strong> (后端 API)</td>
+<td><strong><code>8000 - 8003</code></strong> (各网关的 REST 端口)</td>
+<td><strong>前端接口</strong>：负责为 Web 界面提供数据，它不需要连 gRPC，但必须能连通上述所有网关的 800x 端口。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="12">1.2 标准部署目录结构参考</h3>
+<p>为了确保系统能正确读取外部配置文件及证书，建议按照以下目录规范进行组织。各个网关应当运行在独立的目录（或独立的容器）中。</p>
+<p>以下为一个标准的本地测试集群（1个中继网关 + 2个联盟链网关 + 1个公链网关）的物理目录拓扑：</p>
+<pre><code>gateway-deploy/
+├── secrets.env                     # 全局环境变量文件（存放私钥与密码，启动前 source 注入）
+├── relayer/                        # 中继网关目录
+│   ├── config/                     # 外部配置文件夹
+│   │   ├── application.yml         # 覆盖内部默认配置的生产参数
+│   │   └── certs/
+│   │       └── relayer_private.pem # 中继网关签名私钥
+│   ├── data/db/                    # 运行时自动生成的 LevelDB 目录（不可删）
+│   ├── logs/                       # 运行时自动生成的日志目录
+│   └── tcip-rep-relayer-*.jar      # 核心运行程序
+├── gateway-a/                      # 业务网关 A (RepChain)
+│   ├── config/
+│   │   ├── application.yml
+│   │   ├── init-events.json        # 自动装载的跨链事件触发规则
+│   │   └── certs/
+│   │       └── gateway_private.pem # 网关 A 签名私钥
+│   ├── data/gateway_db/
+│   └── tcip-rep-repchain-*.jar
+└── gateway-c/                      # 业务网关 C (以太坊)
+    ├── config/
+    │   ├── application.yml
+    │   └── init-chain-configs.json # 自动装载的以太坊合约 ABI 与地址配置
+    ├── data/eth-gateway-db/
+    └── tcip-rep-ethereum-*.jar
+</code></pre>
+<blockquote>
+<p><strong>相对路径说明</strong>：YAML 配置文件中的路径（如 <code>path: "./data/gateway_db"</code> 或 <code>pem-file: "config/certs/gateway_private.pem"</code>）均是以 <code>.jar</code> 文件所在目录为当前工作目录计算的。</p>
+</blockquote>
+<h3 id="13">1.3 核心配置规范</h3>
+<p>系统设计遵循外部配置优先原则。各 JAR 包同级目录下存在 <code>config/</code> 目录，并放置 <code>application.yml</code> 进行参数覆盖。</p>
+<h4 id="131">1.3.1 敏感信息隔离</h4>
+<p>所有涉及资产权限的私钥与密码不建议以明文写入配置文件，而是通过操作系统环境变量注入。在<code>config/application.yml</code>中使用 Spring Boot 占位符语法引用环境变量：</p>
+<pre><code># 示例：RepChain 网关私钥密码
+repchain:
+  private-key:
+    password: ${GATEWAY_KEY_PASSWORD}
+
+# 示例：以太坊网关私钥和API Key
+ethereum:
+  rpc-url: ${GATEWAY_ETH_RPC_URL}
+  ws-url: ${GATEWAY_ETH_WS_URL}
+  credentials:
+    private-key: ${GATEWAY_ETH_PRIVATE_KEY}
+</code></pre>
+<p>可以采用两种方式注入使用，其中，不同实例需要使用独立的环境变量名称：</p>
+<ul>
+<li>优先选择 <code>secrets.env</code> 方式。在部署目录下维护统一的 <code>secrets.env</code> 文件集中定义环境变量，在启动网关前执行<code>source secrets.env</code></li>
+</ul>
+<pre><code># secrets.env
+RELAYER_KEY_PASSWORD=your_password
+GATEWAY_A_KEY_PASSWORD=your_password
+GATEWAY_B_KEY_PASSWORD=your_password
+GATEWAY_C_ETH_PRIVATE_KEY=your_private_key
+ETH_RPC_URL=https://eth-mainnet.rpc.provider/v2/YOUR_API_KEY
+ETH_WS_URL=wss://eth-mainnet.ws.provider/v2/YOUR_API_KEY
+</code></pre>
+<ul>
+<li>在控制台或脚本里逐条 <code>export</code>，例如<code>export GATEWAY_A_KEY_PASSWORD=your_password</code></li>
+</ul>
+<h4 id="132">1.3.2 中继网关核心配置</h4>
+<p>需要确认底层节点连通性与自身中继服务的暴露地址。</p>
+<pre><code>repchain:
+  # 指向中继链底层节点的 REST API 地址
+  host: &quot;127.0.0.1:19081&quot;
+  identity:
+    # 填写中继网关在中继链上合法注册的身份凭证
+    credit-code: &quot;identity-net:121000005l35120456&quot;
+    cert-name: &quot;node1&quot;
+
+gateway:
+  # 本中继网关对外暴露的 gRPC 枢纽地址，业务网关将连接此地址
+  address: &quot;127.0.0.1:9090&quot;
+</code></pre>
+<h4 id="133">1.3.3 业务跨链网关配置</h4>
+<p>业务网关配置的重点在于确立全局唯一性身份，并正确指向中继网关。以下以以太坊网关为例（RepChain 网关同理）：</p>
+<pre><code>ethereum:
+  # 指向该网关所挂载的业务链底层节点地址（仅以太坊网关包含）
+  rpc-url: &quot;https://eth-sepolia.g.alchemy.com/v2/...&quot;
+  ws-url: &quot;wss://eth-sepolia.g.alchemy.com/v2/...&quot;
+
+gateway:
+  # 该网关在中继体系中的全局唯一ID，不可与其他网关重复，必须与中继端注册信息绝对一致
+  gateway-id: &quot;2&quot;
+  # 所代表的网络资源标识
+  chain-rid: &quot;appchain-ethereum&quot;
+
+  relay:
+    # 必须指向 1.2.2 中继网关的 gRPC 地址
+    address: &quot;127.0.0.1:9090&quot;
+</code></pre>
+<h4 id="134">1.3.4 管理平台核心配置</h4>
+<p>管理平台需要通过配置连接底层网关。请修改 <code>tcip-rep-portal-bff/config/application.yml</code>：</p>
+<pre><code>bff:
+  # 必须设置为 real 才能连接真实网关（mock 为前端调试模式）
+  mode: real
+
+  relayer:
+    # 必须指向中继网关的 REST API 与 gRPC 枢纽地址
+    url: &quot;http://localhost:8000&quot;
+    name: &quot;relay_gateway&quot;
+    grpc-address: &quot;127.0.0.1:9090&quot;
+    # 必须指向中继链底层的实时区块可视化地址（用于前端跳转）
+    explorer-url: &quot;http://127.0.0.1:19081&quot;
+
+  gateways:
+    # 数组列表：需在此处穷举所有已接入的业务网关
+    - id: &quot;0&quot;                           # 必须与网关自身的 gateway-id 一致
+      name: &quot;gateway_a&quot;
+      url: &quot;http://localhost:8001&quot;      # 必须指向该网关的 REST API 端口
+      chain-rid: &quot;appchain-a&quot;
+      grpc-address: &quot;127.0.0.1:9091&quot;
+      tx-verify-type: &quot;rpc&quot;
+      chain-type: &quot;CHAIN_TYPE_REPCHAIN&quot; # 区分RepChain与以太坊
+      explorer-url: &quot;http://127.0.0.1:20081&quot; # RepChain底层地址
+
+    - id: &quot;2&quot;
+      name: &quot;gateway_c&quot;
+      url: &quot;http://localhost:8003&quot;
+      chain-rid: &quot;appchain-ethereum&quot;
+      grpc-address: &quot;127.0.0.1:9093&quot;
+      tx-verify-type: &quot;spv&quot;             # 根据以太坊网关的实际验证模式填写
+      chain-type: &quot;CHAIN_TYPE_ETHEREUM&quot; # 区分RepChain与以太坊
+      explorer-url: &quot;https://sepolia.etherscan.io&quot; # 以太坊浏览器路径
+      # 以太坊特有配置：由于公链无法通过统一接口动态扫描部署时间，需手动补齐用于前端展示
+      static-contracts:
+        # 注意：此处必须填写 0x 开头的真实合约地址
+        - contract-name: &quot;0x在此替换为您实际部署的以太坊代理合约地址&quot;
+          tx-id: &quot;0x在此替换为部署该合约时的交易Hash&quot;
+          block-height: 1234567       # 替换为实际部署所在的区块高度
+          deploy-time: &quot;YYYY-MM-DD HH:mm:ss&quot; # 替换为实际部署时间
+</code></pre>
+<h3 id="14">1.4 标准启动顺序</h3>
+<p>跨链平台在启动时具有严格的依赖时序，您可以参考项目提供的自动化脚本，或按以下顺序列操作：</p>
+<ol>
+<li>
+<p><strong>启动底层节点网络</strong>：启动 RepChain 节点，等待网络共识建立完毕（联盟链通常需等待数十秒以完成创世块落盘）。</p>
+</li>
+<li>
+<p><strong>部署智能合约</strong>：通过 RCJava 或 Hardhat 工具链，将中继主合约与业务跨链合约部署至对应的底层网络中。</p>
+</li>
+<li>
+<p><strong>启动网关集群</strong>：依次启动中继网关（Relayer）与各业务跨链网关。若有统一部署目录，也可通过执行自动化脚本拉起整个集群。</p>
+</li>
+<li>
+<p><strong>验证 gRPC 通道</strong>：向任意业务网关发送探活请求：</p>
+</li>
+</ol>
+<p><code>curl http://localhost:8003/v1/cross-chain/ping</code></p>
+<p><em>若返回包含当前时间戳的 JSON 响应，则证明底层 gRPC 通道握手成功。</em></p>
+<ol>
+<li><strong>启动管理平台并访问</strong>：分别启动 Portal 平台的后端 BFF 服务与前端 Web 项目（如通过 <code>pnpm dev</code>）。完成后，在浏览器中打开前端本地地址（默认通常为 <code>http://localhost:5173</code>），即可进入可视化控制台。</li>
+</ol>
+<h3 id="15">1.5 源码获取与自行编译（可选）</h3>
+<p>若您的实施环境是从开源仓库代码开始构建全套系统，而非使用预编译发布包，请按照本节的多仓库结构进行全局编译。编译完成并成功部署合约以后，再根据配置文件中的端口设置进行连通性测试。</p>
+<p><strong>前置环境：</strong></p>
+<ul>
+<li><strong>后端构建</strong>：Maven 3.6+</li>
+<li><strong>前端构建</strong>：Node.js 18+ 与 pnpm</li>
+<li><strong>版本控制</strong>：Git</li>
+</ul>
+<h4 id="151-tcip-rep">1.5.1 拉取与编译核心网关组件 (tcip-rep)</h4>
+<p>核心网关项目通过 Git Submodule 聚合了 <code>ethereum</code>、<code>relayer</code>、<code>repchain</code>、<code>common</code> 和 <code>proto</code> 五个子模块。</p>
+<pre><code># 1. 克隆主仓库并初始化所有子模块
+git clone --recurse-submodules https://gitee.com/tcip-rep/tcip-rep.git
+cd tcip-rep
+
+# 2. 触发全局构建（跳过测试与 Scala 原生代码重生成）
+mvn clean package -Dscalapbc.skip=true -DskipTests
+</code></pre>
+<p>构建完成后，各网关的可执行 <code>.jar</code> 包将生成在对应子模块的 <code>target/</code> 目录下。</p>
+<h4 id="152-tcip-rep-portal">1.5.2 拉取与编译管理平台 (tcip-rep-portal)</h4>
+<p>管理平台独立于网关组件，采用前后端分离架构，需要分别编译 BFF 层与 Web 层。</p>
+<pre><code># 1. 克隆管理平台仓库
+git clone https://gitee.com/tcip-rep/tcip-rep-portal.git
+cd tcip-rep-portal
+
+# 2. 构建后端 BFF 服务 (Spring Boot)
+cd tcip-rep-portal-bff
+mvn clean package -DskipTests
+# 产物位置: target/tcip-rep-portal-bff-*.jar
+
+# 3. 构建前端 Web 服务 (React)
+cd ../tcip-rep-portal-web
+pnpm install
+pnpm build
+# 产物位置: dist/ 目录 (生成静态文件，可交由 Nginx 托管)
+</code></pre>
+<blockquote>
+<p><strong>运行提示</strong>：<code>tcip-rep-portal-bff</code> 编译出的 jar 包需要单独运行（<code>java -jar</code>），其配置依赖 <code>application.yml</code> 中的 <code>bff.gateways</code> 映射。前端静态文件 <code>dist/</code> 需配置 Web 服务器代理至 BFF 的 9000 端口。</p>
+</blockquote>
+<h4 id="153-tcip-rep-contracts">1.5.3 智能合约 (tcip-rep-contracts)</h4>
+<p>可用的合约工程独立存放于 <code>tcip-rep-contracts</code> 仓库中，您需要自行将合约部署到目标链，并完成对应配置。</p>
+<p><strong>1. RepChain 合约部署</strong> </p>
+<p>可以使用 <a href="https://www.google.com/search?q=https://gitee.com/BBDC/rcjava">RCJava</a> SDK 进行部署。由于 RepChain 的 DID 权限机制，操作须包含三步：部署合约、注册方法、授权网关身份。</p>
+<ul>
+<li><strong>配置说明</strong>：部署完成后，网关会自动从 <code>config/init-events.json</code>（事件触发规则）中读取合约名称进行路由，<strong>无需</strong>在网关做额外的全局地址配置。</li>
+</ul>
+<p><strong>2. 以太坊合约部署</strong> </p>
+<p>可以使用 Hardhat 等工具链部署 <code>EthCrossChainTCC</code> 代理合约（UUPS 模式）。</p>
+<ul>
+<li><strong>部署约束</strong>：由于<code>EthCrossChainTCC</code> 代理合约代码层面实现了权限校验，在初始化代理合约时，必须将网关的账户地址（需与 <code>application.yml</code> 中配置的私钥对应）作为参数传入，以赋予网关回调写权限。</li>
+<li><strong>配置说明</strong>：部署成功后，需要将生成的<strong>代理合约地址</strong>（0x...）填入以太坊网关的 <code>config/init-chain-configs.json</code> 文件中。</li>
+</ul>
+<h2 id="2">2. 跨链管理平台操作手册</h2>
+<p>本章节介绍通过 Web 控制台完成跨链的相关配置，执行跨链业务。</p>
+<h3 id="21">2.1 构建跨链通道</h3>
+<p>完整的跨链业务通道建立包括以下四个标准化步骤：</p>
+<ol>
+<li><strong>网关与链资源检查</strong>：进入 <strong>[网关管理]</strong>，确认中继网关与业务链网关均处于 <code>正常运行</code> 状态，名称、绑定/所在链等信息加载正确。</li>
+</ol>
+<blockquote>
+<p><strong>提示</strong>：若网关未显示或持续显示离线，请首先检查 Portal-BFF 后端文件 <code>application.yml</code> 中的 <code>bff.gateways</code> 列表是否正确映射了底层网关的 REST 端口与 ID。</p>
+</blockquote>
+<ol>
+<li><strong>智能合约确认</strong>：进入 <strong>[跨链合约管理]</strong>，查看 RepChain 上的跨链业务合约RepCrossChainTCC是否已正确显示，且点击可以实时获取合约代码。</li>
+</ol>
+<blockquote>
+<p><strong>提示</strong>：联盟链 (RepChain) 的智能合约信息是根据跨链事件规则中填写的合约名称动态获取的，新建正确的事件规则后平台会自动拉取。若未能正确显示，说明网关连接异常或合约名称填写错误。而公链合约受限于网络特性，是通过管理平台后端 <code>application.yml</code> 中的 <code>static-contracts</code> 静态装载展示的，请确保该配置项的合约地址填写正确。</p>
+</blockquote>
+<ol>
+<li>
+<p><strong>建立事件规则</strong>：进入 <strong>[跨链事件管理]</strong>，新建跨链事件规则。选择源网关与目标网关，配置需监听的合约、方法名以及目标链的目标合约和执行方法等信息。</p>
+</li>
+<li>
+<p><strong>提交测试交易</strong>：进入 <strong>[提交测试交易]</strong> 填写存证数据，平台将自动跳转到 <strong>[首页]</strong> 面板，可查看新交易的状态流转轨迹。</p>
+</li>
+</ol>
+<h3 id="22">2.2 页面操作指引</h3>
+<h4 id="221">2.2.1 网关管理</h4>
+<p>提供跨链底层网络基础设施的全局状态监控与拓扑可视化。</p>
+<p><img alt="网关管理" src="assets/wanguanguanli.png" /></p>
+<ul>
+<li>统一展示当前系统所接入的中继网关与所有业务跨链网关。正常情况下，各网关卡片应显示绿色的 <code>正常运行</code> 状态指示。</li>
+<li>若网关状态显示为 <code>离线</code> 或持续处于加载状态，代表平台与底层网关失联。此时应优先核对 BFF 后端的 <code>application.yml</code> 配置文件（即 <code>bff.gateways</code> 列表中的端口映射是否正确），并确认服务器防火墙已放行相关端口。</li>
+</ul>
+<h4 id="221_1">2.2.1 跨链合约管理</h4>
+<p>提供多链架构下的智能合约可视化管理。</p>
+<p><img alt="跨链合约管理" src="assets/kualianheyueguanli.png" /></p>
+<ul>
+<li><strong>RepChain</strong>：直接点击列表行展开，即可查看完整的合约源码。</li>
+<li><strong>以太坊</strong>：受限于 EVM 源码验证机制，控制台不直接拉取源码。展开行会提供引导提示，点击按钮可跳转至 Etherscan 浏览器的 Contract 标签页查看实时 ABI 与源码。</li>
+</ul>
+<h4 id="222">2.2.2 跨链事件管理</h4>
+<p>定义底链数据交换路由的核心模块。</p>
+<p><img alt="跨链事件管理" src="assets/kualianshijianguanli.png" /></p>
+<ul>
+<li><strong>标准 TCC 跨链模板</strong>：默认开启。选择源与目标网关后，系统会基于 <code>CHAIN_TYPE</code> 自动装填底层协议所需的全部握手参数（包含固定合约名、事件签名及回调映射），参数和默认合约的代码逻辑一致。</li>
+</ul>
+<h4 id="223">2.2.3 提交测试交易</h4>
+<p>提供跨链状态机的闭环验证工具。</p>
+<p><img alt="提交测试交易" src="assets/tijiaojiaoyiceshi.png" /></p>
+<ul>
+<li><strong>验证场景</strong>：</li>
+<li><strong>正常存证 (HAPPY)</strong>：验证正常情况下的 <code>Try -&gt; Confirm</code> 正向落账流程。</li>
+<li><strong>回滚测试 (CANCEL)</strong>：系统提前在目标链存储当前填写的存证数据，导致跨链过程中在检查目标链数据时产生键冲突，从而触发目标链预执行失败。用于验证中继网关是否能准确捕获异常并向所有节点下发 <code>Cancel</code> 补偿指令，保证最终一致性。</li>
+<li><strong>发起端限制</strong>：当前控制台的自动签名机制仅支持 <strong>RepChain</strong> 作为跨链测试的源链。若需测试 以太坊 -&gt; RepChain 的链路，请通过 Hardhat 等工具链对部署在以太坊上的 <code>CrossChainSave</code> 方法进行调用，事务状态将自动同步至 Dashboard。</li>
+<li>为满足目标链 Scala 端的反序列化需求，调用以太坊合约时传入的 <code>payload</code> 参数<strong>必须是序列化后的特定 JSON 数组字符串</strong>。结构必须包含 <code>key</code>、<code>value</code> 和 <code>timestamp</code>。示例： <code>'[{"key":"eth2rep_001", "value":"跨链数据内容", "timestamp":"2026-06-11T12:00:00.000Z"}]'</code> 若传入普通字符串，网关解析将报错并导致跨链事务失败。具体参数以部署的合约代码为准。</li>
+</ul>
+<h4 id="224">2.2.4 首页</h4>
+<p>提供全局跨链大盘数据与 TCC 状态机的可视化追踪，是日常运行监控与异常排障的核心面板。</p>
+<p><img alt="首页" src="assets/shouye.png" /></p>
+<ul>
+<li><strong>状态流转</strong>：直观展示一笔跨链业务从发起、执行到最终落账的完整生命周期。</li>
+<li><strong>交易追踪</strong>：点击展开任意单条跨链记录，可查看该跨链事务在各个阶段在源链、目标链和中继链上产生的相关真实底层交易哈希。可点击哈希前往对应链的区块浏览器进行查看。</li>
+</ul>
+<h2 id="_1">跨链操作视频</h2>
+<p><a href="https://www.bilibili.com/video/BV1zhLX6dEkR/?vd_source=8c15b319910e79d935561c73f7f186cb">🎥 点击观看演示操作视频</a></p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2026-06-30 04:41:40.342752+00:00
+-->

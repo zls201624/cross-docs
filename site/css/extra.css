@@ -1,0 +1,8 @@
+/* 隐藏默认主题的站点标题 */
+.navbar-brand {
+    display: none;
+}
+/* 如果是 readthedocs 主题 */
+.wy-side-nav-search .wy-dropdown > a {
+    display: none;
+}

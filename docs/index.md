@@ -1,6 +1,5 @@
-# RepChain跨链平台部署与用户手册
+# RepChain跨链平台relayHub部署与用户手册
 
-[TOC]
 
 ## 1. 系统部署指南
 

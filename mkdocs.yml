@@ -1,1 +1,3 @@
 site_name: My Docs
+extra_css:
+  - css/extra.css
